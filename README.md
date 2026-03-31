@@ -1,4 +1,5 @@
-# opencart-templates
+# OpenCart-Шаблоны 
+### Специально для duty-free.cc
 
 ## Такие шаблоны как
 - CVE-2025-1116
