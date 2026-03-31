@@ -2,7 +2,7 @@ id: opencart-image-compress-squeezeimg-lfi
 
 info:
   name: OpenCart Image Compress Squeezeimg - Unauthenticated LFI (config.php read)
-  author: research
+  author: funny
   severity: critical
   description: |
     The Image Compress with Squeezeimg extension (marketplace ID 40868) exposes
@@ -10,7 +10,7 @@ info:
     file_get_contents() without path sanitization. Allows unauthenticated reading
     of config.php (DB credentials), admin/config.php, and any other file in the
     OpenCart web root.
-  tags: opencart,lfi,disclosure,unauth,rce
+  tags: opencart,lfi,disclosure,unauth
   metadata:
     opencart-extension-id: "40868"
 
