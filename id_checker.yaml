@@ -1,0 +1,85 @@
+id: checker-lvl
+
+info:
+  name: opencart checker automated bug scan
+  author: dead
+  severity: critical
+  reference: https://neal.fun/
+  tags: sql,opencart
+  metadata:
+    verified: true
+    self-contained: true
+
+flow: http(1) & http(2)
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+    headers:
+      User-Agent: Mozilla/5.0 (iPad; CPU OS 8_3 like Mac OS X) AppleWebKit/600.1.4 (KHTML, like Gecko) Version/8.0 Mobile/12F69 Safari/600.1.4           
+
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains(header, "OCSESSID=")'
+          - 'contains_any(body, "opencart.com", "OpenCart is open source", "content=\"OpenCart")'
+        condition: or
+        internal: true   
+
+
+  - method: GET
+    path:
+    #manufacturer - 1
+      - "{{BaseURL}}/index.php?route=product/manufacturer/info&manufacturer_id=' "
+    #product - 2
+      - "{{BaseURL}}/index.php?route=product/product&path=4_16&product_id=431' "
+    #search - 3
+      - "{{BaseURL}}/index.php?route=product/search&tag=' "
+    #seo - 4
+      - "{{BaseURL}}/' "
+    #enquiry - 5
+      - "{{BaseURL}}/index.php?route=information/contact&enquiry=' "
+    #journal3 - 6
+      - "{{BaseURL}}/index.php?route=journal3/product&product_id=' "
+    #pav - 7
+      - "{{BaseURL}}/index.php?route=pavblog/blog&blog_id=160' "
+    #blog_list - 8
+      - "{{BaseURL}}/index.php?route=product/blog_list&blogger_id=11' "   
+    #blog - 9
+      - "{{BaseURL}}/index.php?route=blog/blog&blog_id=140' "
+    #mega-filter - 10
+      - "{{BaseURL}}/index.php?route=module/mega_filter/results&mfp='"
+    #config - 11
+#      - "{{BaseURL}}/system/config/default.php"
+
+    headers:
+      User-Agent: Mozilla/5.0 (iPad; CPU OS 8_3 like Mac OS X) AppleWebKit/600.1.4 (KHTML, like Gecko) Version/8.0 Mobile/12F69 Safari/600.1.4           
+
+    host-redirects: true
+    max-redirects: 2
+
+    stop-at-first-match: true
+    matchers-condition: or
+    matchers:
+      - type: dsl
+        condition: or
+        name: sql
+        dsl:
+          - 'contains(body_1,"syntax") && status_code_1==200'
+          - 'contains(body_2,"syntax;") && status_code_2==200'
+          - 'contains(body_3,"syntax;") && status_code_3==200'
+          - 'contains(body_4,"syntax;") && contains(body_4,"<html") && status_code_4==200'
+          - 'contains(body_5,"syntax;") && status_code_5==200'
+          - 'contains(body_6,"syntax;") && status_code_6==200'
+          - 'contains(body_7,"syntax;") && status_code_7==200'
+          - 'contains(body_8,"syntax;") && status_code_8==200'
+          - 'contains(body_9,"syntax;") && status_code_9==200'
+          - 'contains(body_10,"syntax;") && status_code_10==200'
+
+#      - type: dsl
+#        condition: or
+#        name: conf
+##        dsl:
+#          - 'contains(body_11,"<?php","define(") && status_code_11==200'
+#          - 'contains(body_11,"<?php","DB_PASSWORD") && status_code_11==200'

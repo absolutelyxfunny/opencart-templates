@@ -1,0 +1,190 @@
+id: opencart-config-exposure
+
+info:
+  name: OpenCart Configuration File Exposure
+  author: funny
+  severity: high
+  description: |
+    Detects exposed OpenCart configuration files (config.php) via backup copies,
+    temporary files, editor swap files, and compressed archives. Leaked config files
+    may contain database credentials, encryption keys, and other sensitive data.
+  tags: opencart,config,exposure,backup,misconfig
+  classification:
+    cwe-id: CWE-530
+    cvss-metrics: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N
+    cvss-score: 7.5
+  reference:
+    - https://www.opencart.com/
+    - https://owasp.org/www-project-web-security-testing-guide/latest/4-Web_Application_Security_Testing/02-Configuration_and_Deployment_Management_Testing/04-Review_Old_Backup_and_Unreferenced_Files_for_Sensitive_Information
+  metadata:
+    max-request: 530
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/config.php{{ext}}"
+      - "{{BaseURL}}/admin/config.php{{ext}}"
+      - "{{BaseURL}}/opencart/config.php{{ext}}"
+      - "{{BaseURL}}/opencart/admin/config.php{{ext}}"
+      - "{{BaseURL}}/upload/config.php{{ext}}"
+      - "{{BaseURL}}/upload/admin/config.php{{ext}}"
+      - "{{BaseURL}}/shop/config.php{{ext}}"
+      - "{{BaseURL}}/shop/admin/config.php{{ext}}"
+      - "{{BaseURL}}/store/config.php{{ext}}"
+      - "{{BaseURL}}/store/admin/config.php{{ext}}"
+      - "{{BaseURL}}/config.php.ini"
+      - "{{BaseURL}}/admin/config.php.ini"
+
+    payloads:
+      ext:
+        - ".bak"
+        - ".bak1"
+        - ".bak2"
+        - ".bak3"
+        - ".bak~"
+        - ".bak.2"
+        - ".old"
+        - ".orig"
+        - ".dist"
+        - ".tmp"
+        - ".temp"
+        - ".save"
+        - ".save~"
+        - ".autosave"
+        - ".backup"
+        - ".backup1"
+        - ".backup2"
+        - ".copy"
+        - ".bakup"
+        - ".bck"
+        - ".bk"
+        - ".bkp"
+        - ".disabled"
+        - ".txt"
+        - ".log"
+        - ".swo"
+        - ".swn"
+        - ".swp"
+        - "!"
+        - "~"
+        - "_"
+        - ""
+
+    attack: clusterbomb
+    stop-at-first-match: true
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: word
+        part: body
+        words:
+          - "DB_PASSWORD"
+          - "DB_USERNAME"
+          - "DB_HOSTNAME"
+          - "DB_DATABASE"
+        condition: or
+
+      - type: word
+        part: body
+        words:
+          - "define("
+          - "DB_PREFIX"
+        condition: or
+
+      - type: word
+        part: body
+        words:
+          - "<html"
+          - "<HTML"
+          - "<!DOCTYPE"
+        negative: true
+        condition: or
+
+    extractors:
+      - type: regex
+        name: db-host
+        group: 1
+        regex:
+          - "DB_HOSTNAME['\"],\\s*['\"]([^'\"]+)"
+
+      - type: regex
+        name: db-name
+        group: 1
+        regex:
+          - "DB_DATABASE['\"],\\s*['\"]([^'\"]+)"
+
+      - type: regex
+        name: db-user
+        group: 1
+        regex:
+          - "DB_USERNAME['\"],\\s*['\"]([^'\"]+)"
+
+  - method: GET
+    path:
+      - "{{BaseURL}}/config.php{{ext}}"
+      - "{{BaseURL}}/admin/config.php{{ext}}"
+      - "{{BaseURL}}/opencart/config.php{{ext}}"
+      - "{{BaseURL}}/opencart/admin/config.php{{ext}}"
+      - "{{BaseURL}}/upload/config.php{{ext}}"
+      - "{{BaseURL}}/upload/admin/config.php{{ext}}"
+      - "{{BaseURL}}/shop/config.php{{ext}}"
+      - "{{BaseURL}}/shop/admin/config.php{{ext}}"
+      - "{{BaseURL}}/store/config.php{{ext}}"
+      - "{{BaseURL}}/store/admin/config.php{{ext}}"
+
+    payloads:
+      ext:
+        - ".zip"
+        - ".7z"
+        - ".rar"
+        - ".tar"
+        - ".tar.gz"
+        - ".tgz"
+        - ".gz"
+        - ".tar.bz2"
+        - ".bz2"
+        - ".tar.xz"
+        - ".xz"
+        - ".tar.z"
+        - ".z"
+        - ".lz"
+        - ".zst"
+        - ".lzma"
+        - ".war"
+        - ".jar"
+
+    attack: clusterbomb
+    stop-at-first-match: true
+    max-size: 1024 
+
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
+
+      - type: binary
+        part: body
+        condition: or
+        binary:
+          - "504B0304"         # ZIP (PK\x03\x04)
+          - "504B0506"         # ZIP empty archive
+          - "504B0708"         # ZIP spanned archive
+          - "377ABCAF271C"     # 7z
+          - "526172211A0700"   # RAR v1.50
+          - "526172211A070100" # RAR v5.0
+          - "1f8b"             # gzip / .tar.gz / .tgz
+          - "314159265359"     # bzip2 / .tar.bz2
+          - "FD377A585A0000"   # xz / .tar.xz
+          - "4C5A4950"         # lzip (.lz)
+          - "28B52FFD"         # Zstandard (.zst)
+          - "5D00"             # LZMA (.lzma) — common header prefix
+          - "7573746172202000" # tar (ustar\0 \0)
+          - "7573746172003030" # tar (ustar\000)
+          - "1F9D"             # .Z (compress)
+          - "1FA0"             # .Z (compress, older)
+          - "CAFEBABE"         # JAR/WAR (Java class magic)
